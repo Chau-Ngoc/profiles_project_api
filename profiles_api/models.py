@@ -7,31 +7,58 @@ from django.contrib.auth.models import (
 
 
 class UserProfileManager(BaseUserManager):
-    """Manager for user profiles.
-    """
+    """Manager for user profiles."""
+
     def create_user(self, email, first_name, last_name, password=None):
         """Create a new user profile.
 
-        :param email: the user's email
+        :param email: the user's email.
         :type email: str
         :param first_name: the user's first name.
         :type first_name: str
         :param last_name: the user's last name.
         :type last_name: str
-        :param password: the password used for authentication, defaults to None
+        :param password: the password used for authentication, defaults to None.
         :type password: str, optional
         :return: a user
         :rtype: UserProfile
         """
         if not email:
-            raise ValueError('User must have an email address')
+            raise ValueError("User must have an email address")
 
         email = self.normalize_email(email)
-        user = self.model(email=email, last_name=last_name, first_name=first_name)
+        user = self.model(
+            email=email, last_name=last_name, first_name=first_name
+        )
+
         user.set_password(password)
+        user.save()
+
+        return user
+
+    def create_superuser(self, email, first_name, last_name, password):
+        """Create a superuser with the given details.
+
+        :param email: the superuser's email
+        :type email: str
+        :param first_name: the superuser's first name
+        :type first_name: str
+        :param last_name: the superuser's last name
+        :type last_name: str
+        :param password: the superuser's password.
+        :type password: str
+        :return: a superuser
+        :rtype: UserProfile
+        """
+        user = self.create_user(email, first_name, last_name, password)
+        user.is_superuser = True
+        user.is_staff = True
+        user.save()
+
+        return user
 
 
-class UserProfile(AbstractBaseUser):
+class UserProfile(AbstractBaseUser, PermissionsMixin):
     """Database model for the users in the system."""
 
     email = models.EmailField(max_length=255, unique=True)
