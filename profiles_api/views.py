@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.viewsets import ViewSet, ModelViewSet
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.filters import SearchFilter
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 
 from profiles_api import serializers
 from profiles_api.models import UserProfile
@@ -115,3 +117,9 @@ class UserProfileViewSet(ModelViewSet):
     permission_classes = (ProfileUpdatePermission,)
     filter_backends = (SearchFilter,)
     search_fields = ("first_name", "last_name", "email")
+
+
+class UserLoginView(ObtainAuthToken):
+    """This view handles creations of user authentication tokens."""
+
+    renderer_classes = [JSONRenderer, BrowsableAPIRenderer]
