@@ -4,6 +4,7 @@ from django.contrib.auth.models import (
     PermissionsMixin,
     BaseUserManager,
 )
+from django.conf import settings
 
 
 class UserProfileManager(BaseUserManager):
@@ -87,3 +88,15 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
         :rtype: str
         """
         return self.email
+
+
+class Feed(models.Model):
+    """The user's status feed."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    status_text = models.TextField(max_length=255)
+    created_on = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        """Return the status text as a string representation of the model."""
+        return self.status_text
