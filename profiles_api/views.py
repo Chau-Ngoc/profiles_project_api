@@ -8,8 +8,11 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 
 from profiles_api import serializers
-from profiles_api.models import UserProfile
-from profiles_api.permissions import ProfileUpdatePermission
+from profiles_api.models import UserProfile, Feed
+from profiles_api.permissions import (
+    ProfileUpdatePermission,
+    UpdateFeedPermission,
+)
 
 
 class HelloApiView(APIView):
@@ -123,3 +126,39 @@ class UserLoginView(ObtainAuthToken):
     """This view handles creations of user authentication tokens."""
 
     renderer_classes = [JSONRenderer, BrowsableAPIRenderer]
+
+
+class UserFeedView(ModelViewSet):
+    """The view for the user's feeds."""
+
+    serializer_class = serializers.UserFeedSerializer
+    authentication_classes = [TokenAuthentication]
+    queryset = Feed.objects.all()
+    permission_classes = [UpdateFeedPermission]
+
+    def create(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            message = {"message": "You are not authenticated. Please log in."}
+            return Response(message, status.HTTP_401_UNAUTHORIZED)
+
+        serializer = self.serializer_class(data=request.data)
+
+        if serializer.is_valid():
+            serializer.validated_data["user"] = request.user
+            serializer.save()
+            return Response(serializer.data, status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        feed_instance = self.get_object()
+        self.check_object_permissions(request, feed_instance)
+        serializer = self.serializer_class(
+            instance=feed_instance, data=request.data
+        )
+        if serializer.is_valid():
+            serializer.validated_data["user"] = request.user
+            serializer.save()
+            return Response(serializer.data, status.HTTP_200_OK)
+
+        return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)

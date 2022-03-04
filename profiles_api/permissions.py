@@ -10,3 +10,13 @@ class ProfileUpdatePermission(BasePermission):
             return True
 
         return obj.id == request.user.id
+
+
+class UpdateFeedPermission(BasePermission):
+    """Allow users to only update their own status feeds."""
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+
+        return obj.user.id == request.user.id
