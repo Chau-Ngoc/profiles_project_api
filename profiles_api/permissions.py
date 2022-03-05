@@ -15,6 +15,8 @@ class ProfileUpdatePermission(BasePermission):
 class UpdateFeedPermission(BasePermission):
     """Allow users to only update their own status feeds."""
 
+    message = "You don't have permission to modify this feed."
+
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True

@@ -1,14 +1,16 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+import rest_framework.request
 from rest_framework import status
-from rest_framework.viewsets import ViewSet, ModelViewSet
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.filters import SearchFilter
 from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
+from rest_framework.filters import SearchFilter
+from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet, ViewSet
+from rest_framework.permissions import IsAuthenticated
 
 from profiles_api import serializers
-from profiles_api.models import UserProfile, Feed
+from profiles_api.models import Feed, UserProfile
 from profiles_api.permissions import (
     ProfileUpdatePermission,
     UpdateFeedPermission,
@@ -117,7 +119,7 @@ class UserProfileViewSet(ModelViewSet):
     serializer_class = serializers.UserProfileSerializer
     queryset = UserProfile.objects.all()
     authentication_classes = (TokenAuthentication,)
-    permission_classes = (ProfileUpdatePermission,)
+    permission_classes = (ProfileUpdatePermission, IsAuthenticated)
     filter_backends = (SearchFilter,)
     search_fields = ("first_name", "last_name", "email")
 
@@ -134,31 +136,22 @@ class UserFeedView(ModelViewSet):
     serializer_class = serializers.UserFeedSerializer
     authentication_classes = [TokenAuthentication]
     queryset = Feed.objects.all()
-    permission_classes = [UpdateFeedPermission]
+    permission_classes = [UpdateFeedPermission, IsAuthenticated]
 
-    def create(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            message = {"message": "You are not authenticated. Please log in."}
-            return Response(message, status.HTTP_401_UNAUTHORIZED)
+    def create(self, request: rest_framework.request.Request, *args, **kwargs):
+        """
+        Create a new Feed object when users send a POST request.
 
+        :param request: the request from users.
+        :type request: Request
+        :return: a response with 201 status code or 400 if bad request.
+        :rtype: Response
+        """
         serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
             serializer.validated_data["user"] = request.user
             serializer.save()
             return Response(serializer.data, status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
-
-    def update(self, request, *args, **kwargs):
-        feed_instance = self.get_object()
-        self.check_object_permissions(request, feed_instance)
-        serializer = self.serializer_class(
-            instance=feed_instance, data=request.data
-        )
-        if serializer.is_valid():
-            serializer.validated_data["user"] = request.user
-            serializer.save()
-            return Response(serializer.data, status.HTTP_200_OK)
 
         return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)

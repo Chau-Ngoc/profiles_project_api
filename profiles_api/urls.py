@@ -11,5 +11,5 @@ a_router.register("feed", views.UserFeedView)
 urlpatterns = [
     path("login/", views.UserLoginView.as_view()),
     path("hello-view/", views.HelloApiView.as_view()),
-    path("", include(a_router.urls)),
+    path("api/", include(a_router.urls)),
 ]
